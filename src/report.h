@@ -3,6 +3,8 @@
 
 #include <Arduino.h>
 
+#include <Adafruit_TinyUSB.h>
+
 // RawHID might never work with multireports, because of OS problems
 // therefore we have to make it a single report with no ID. No other HID device will be supported then.
 #undef RAWHID_USAGE_PAGE
@@ -37,7 +39,7 @@ uint8_t const desc_hid_report[] =
     0xC0                         /* end collection */ 
 };
 
-struct inputdata {
+struct {
   unsigned char AIRValue;        //天键信号，低6bits对应6个传感器
   unsigned char Buttons;         //控制器3个功能按键，低3bits对应3个按键
   unsigned char TouchValue[32];  //32个触摸数值
@@ -51,12 +53,12 @@ struct rgb {
   unsigned char B;
 };
 
-struct usb_output_data_1 {
+struct {
   unsigned char Index;       //该字节要求，为0 (即, 接收到的数据如果第1byte为0, 那么就按照usb_output_data_1的结构来解析)
   struct rgb TouchArea[20];  //对应触摸区域前20个灯
 } data_rx_1;
 
-struct usb_output_data_2 {
+struct {
   unsigned char Index;       //该字节要求，为1 (即, 接收到的数据如果第1byte为1, 那么就按照usb_output_data_2的结构来解析)
   struct rgb TouchArea[11];  //对应触摸区域后11个灯
   struct rgb LeftAir;        //左侧板灯光

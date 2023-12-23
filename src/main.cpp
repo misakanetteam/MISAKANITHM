@@ -18,29 +18,29 @@ Adafruit_NeoPixel ws2812(NUM_LEDS, WS2812_PIN, NEO_GRB + NEO_KHZ800);
 Adafruit_NeoPixel status_led(1, 16, NEO_GRB + NEO_KHZ800);
 Adafruit_VL53L0X vl53l0x[VL53L0X_COUNT];
 
+// core0初始化
 void setup() {
+  // 单核进行初始化 暂停core1
   rp2040.idleOtherCore();
 
   // 初始化状态灯
   status_led.begin();
   status_led.setBrightness(BRIGHTNESS);
-  status_led.fill(0x00ff00);
+  status_led.fill(0x00ff00);  // 状态灯红色 正在初始化
   status_led.show();
 
   // 初始化WS2812
   ws2812.begin();
-  ws2812.setBrightness(16);
+  ws2812.setBrightness(BRIGHTNESS);
   ws2812.clear();
   ws2812.show();
 
-  // WS2812自检
-  ws2812.fill(RGB(255,255,255));
+  // WS2812自检 所有灯闪亮白色光
+  ws2812.fill(0xffffff);
   ws2812.show();
   delay(100);
   ws2812.clear();
   ws2812.show();
-  
-  ws2812.setBrightness(BRIGHTNESS);
 
   // 初始化USB
   TinyUSBDevice.setSerialDescriptor("OK"); //设定USB设备序列号
@@ -53,17 +53,7 @@ void setup() {
 
   SerialTinyUSB.begin(115200);
 
-  // 初始化VL53L0X
-  for(int i = VL53L0X_PIN_START; i < VL53L0X_COUNT + VL53L0X_PIN_START; i++) {
-    pinMode(i, OUTPUT_12MA);
-    // 重置VL53L0X
-    digitalWrite(i, LOW);
-    delay(10);
-    digitalWrite(i, HIGH);
-    delay(10);
-    digitalWrite(i, LOW);
-  }
-
+  // 初始化I2C
   Wire.setSDA(0);
   Wire.setSCL(1);
   Wire1.setSDA(2);
@@ -71,6 +61,16 @@ void setup() {
   Wire.begin();
   Wire1.begin();
 
+  // 重置VL53L0X
+  for(int i = VL53L0X_PIN_START; i < VL53L0X_COUNT + VL53L0X_PIN_START; i++) {
+    pinMode(i, OUTPUT_12MA);
+    digitalWrite(i, LOW);
+    delay(10);
+    digitalWrite(i, HIGH);
+    delay(10);
+    digitalWrite(i, LOW);
+  }
+  // 初始化VL53L0X
   for(int i = 0; i < VL53L0X_COUNT; i++) {
     digitalWrite(i + VL53L0X_PIN_START, HIGH);
     delay(10);
@@ -83,20 +83,23 @@ void setup() {
   // TODO: 初始化CY8CMBR3116
 
   // 初始化完成 等待USB连接
-  status_led.fill(0x0000ff);
+  status_led.fill(0x0000ff); // 状态灯蓝色 等待连接
   status_led.show();
   while (!TinyUSBDevice.mounted()) delay(1);  //如果没插入则等待 wait till plugged
   while (!usb_hid.ready()) delay(1);
 
-  status_led.fill(0xff0000);
+  status_led.fill(0xff0000); // 状态灯绿色 正常工作
   status_led.show();
 
+  // 初始化完成 启动core1
   rp2040.restartCore1();
   rp2040.resumeOtherCore();
 }
 
+// core0循环
+// 上报触摸和AIR状态
 void loop() {
-  uint8_t air_value = air_check();
+  uint8_t air_value = air_check(vl53l0x);
   data_tx.AIRValue = air_value; //低6bits为红外传感器数据
   data_tx.Buttons = 0x00; //低3bits为三个功能键
   for (int i = 0; i < 32; i ++)
@@ -112,11 +115,14 @@ void loop() {
   usb_hid.sendReport(0, &data_tx, sizeof(data_tx));
 }
 
-void setup1() {
+// core1初始化
+// 未使用
+void setup1() {}
 
-}
-
+// core1循环
+// 同步WS2812灯效
 void loop1() {
+  // HID报文长度限制 分两次设置
   for (uint8_t i = 0; i < 20; i++) {
     rgb color = data_rx_1.TouchArea[i];
     ws2812.setPixelColor(i, RGB(color.G, color.R, color.B));
