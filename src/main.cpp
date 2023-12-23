@@ -6,6 +6,8 @@
 #include <Wire.h>
 
 #include "defs.h"
+
+#include "air.h"
 #include "report.h"
 
 #define RGB(r,g,b) (r|g<<8|b<<16)
@@ -15,14 +17,6 @@ Adafruit_USBD_HID usb_hid(desc_hid_report, sizeof(desc_hid_report), HID_ITF_PROT
 Adafruit_NeoPixel ws2812(NUM_LEDS, WS2812_PIN, NEO_GRB + NEO_KHZ800);
 Adafruit_NeoPixel status_led(1, 16, NEO_GRB + NEO_KHZ800);
 Adafruit_VL53L0X vl53l0x[VL53L0X_COUNT];
-
-struct inputdata data_tx;
-struct usb_output_data_1 data_rx_1;
-struct usb_output_data_2 data_rx_2;
-
-uint8_t air_check();
-uint16_t get_report_callback(uint8_t report_id, hid_report_type_t report_type, uint8_t* buffer, uint16_t reqlen);
-void set_report_callback(uint8_t report_id, hid_report_type_t report_type, uint8_t const* buffer, uint16_t bufsize);
 
 void setup() {
   rp2040.idleOtherCore();
@@ -131,71 +125,4 @@ void loop1() {
     rgb color = data_rx_2.TouchArea[i];
     ws2812.setPixelColor(i + 20, RGB(color.G, color.R, color.B));
   }
-}
-
-uint8_t air_check() {
-    uint8_t air_key_sensors[6] = {0, 0, 0, 0, 0, 0};
-    // 扫描VL53L0X
-    for (int i = 0; i < VL53L0X_COUNT; i++) {
-        uint16_t range = vl53l0x[i].readRange();
-        if (AIR1_HEIGHT - AIR_RANGE <= range && range <= AIR1_HEIGHT + AIR_RANGE) {
-            air_key_sensors[0] = 1;
-        }
-        if (AIR2_HEIGHT - AIR_RANGE <= range && range <= AIR2_HEIGHT + AIR_RANGE) {
-            air_key_sensors[1] = 1;
-        }
-        if (AIR3_HEIGHT - AIR_RANGE <= range && range <= AIR3_HEIGHT + AIR_RANGE) {
-            air_key_sensors[2] = 1;
-        }
-        if (AIR4_HEIGHT - AIR_RANGE <= range && range <= AIR4_HEIGHT + AIR_RANGE) {
-            air_key_sensors[3] = 1;
-        }
-        if (AIR5_HEIGHT - AIR_RANGE <= range && range <= AIR5_HEIGHT + AIR_RANGE) {
-            air_key_sensors[4] = 1;
-        }
-        if (AIR6_HEIGHT - AIR_RANGE <= range && range <= AIR6_HEIGHT + AIR_RANGE) {
-            air_key_sensors[5] = 1;
-        }
-    }
-
-    uint8_t air_value = 0;
-    for (uint8_t i = 0; i < 6; i++) {
-      air_value = air_value * 2 + air_key_sensors[i];
-    }
-
-    return air_value;
-}
-
-// Invoked when received GET_REPORT control request
-// Application must fill buffer report's content and return its length.
-// Return zero will cause the stack to STALL request
-uint16_t get_report_callback(uint8_t report_id, hid_report_type_t report_type, uint8_t* buffer, uint16_t reqlen) {
-  // not used in this example
-  (void) report_id;
-  (void) report_type;
-  (void) buffer;
-  (void) reqlen;
-  return 0;
-}
-
-// Invoked when received SET_REPORT control request or
-// received data on OUT endpoint ( Report ID = 0, Type = 0 )
-// 当接受到数据时会触发中断, 自动运行这个函数
-void set_report_callback(uint8_t report_id, hid_report_type_t report_type, uint8_t const* buffer, uint16_t bufsize) {
-  // This example doesn't use multiple report and report ID
-  (void) report_id;
-  (void) report_type;
-  status_led.fill(0x00ff00);
-  status_led.show();
-  //buffer即为从电脑收到的数据，首先判断第1byte的数值，来选择解析为data_rx_1还是data_rx_2 (see definition in report.h)
-  if (buffer[0] == 0)
-  {
-    memcpy(&data_rx_1, buffer, bufsize);
-  }
-  else
-  {
-    memcpy(&data_rx_2, buffer, bufsize);
-  }
-  status_led.fill(0xff0000);
-  status_led.show();
 }
