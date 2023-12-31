@@ -1,8 +1,6 @@
 #include "report.h"
 #include "defs.h"
 
-#include <Adafruit_TinyUSB.h>
-
 // Invoked when received GET_REPORT control request
 // Application must fill buffer report's content and return its length.
 // Return zero will cause the stack to STALL request

@@ -1,10 +1,12 @@
 #include "air.h"
 
 uint8_t air_check(Adafruit_VL53L0X vl53l0x[VL53L0X_COUNT]) {
-    uint8_t air_key_sensors[6] = {0, 0, 0, 0, 0, 0};
+    bool air_key_sensors[6] = {0, 0, 0, 0, 0, 0};
     // 扫描VL53L0X
     for (int i = 0; i < VL53L0X_COUNT; i++) {
         uint16_t range = vl53l0x[i].readRange();
+
+        // 判断是否在对应范围内
         if (AIR1_HEIGHT - AIR_RANGE <= range && range <= AIR1_HEIGHT + AIR_RANGE) {
             air_key_sensors[0] = 1;
         }
@@ -25,6 +27,7 @@ uint8_t air_check(Adafruit_VL53L0X vl53l0x[VL53L0X_COUNT]) {
         }
     }
 
+    // 计算HID回报字节
     uint8_t air_value = 0;
     for (uint8_t i = 0; i < 6; i++) {
       air_value = air_value * 2 + air_key_sensors[i];
