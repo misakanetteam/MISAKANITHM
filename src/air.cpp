@@ -29,7 +29,7 @@ uint8_t air_check(Adafruit_VL53L0X vl53l0x[VL53L0X_COUNT]) {
 
     // 计算HID回报字节
     uint8_t air_value = 0;
-    for (uint8_t i = 0; i < 6; i++) {
+    for (uint8_t i = 5; i >= 0; i--) {
       air_value = air_value * 2 + air_key_sensors[i];
     }
 

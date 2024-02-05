@@ -1,15 +1,25 @@
-#include "touch.h"
 #include <Arduino.h>
 
-bool TouchFirstSetup(){
+#include "touch.h"
+
+// 写入触摸芯片配置
+// 应先不连接副板启动，L触摸初始化完成后，10s内连接副板
+void touch_first_setup() {
     CY8CMBR3xxx_Configure(0x37,CY8CMBR3116_LQXI_configuration_CapL);
-    Delay(300);
+    delay(10000);
     CY8CMBR3xxx_Configure(0x37,CY8CMBR3116_LQXI_configuration_CapR);
 }
-uint32 TouchGet(){
+
+bool touch_setup() {
+    if(!CY8CMBR3xxx_Configure(0x22,CY8CMBR3116_LQXI_configuration_CapL)) return false;
+    if(!CY8CMBR3xxx_Configure(0x33,CY8CMBR3116_LQXI_configuration_CapR)) return false;
+    return true;
+}
+
+uint32 touch_get() {
     uint16 BufferL;
     uint16 BufferR;
-    CY8CMBR3xxx_ReadDualByte(0x22u,0xaa,BufferL);
-    CY8CMBR3xxx_ReadDualByte(0x33u,0xaa,BufferR);
-    return ((uint32)BufferL << 16 | BufferR);
+    CY8CMBR3xxx_ReadDualByte(0x22u, CY8CMBR3xxx_BUTTON_STAT, &BufferL);
+    CY8CMBR3xxx_ReadDualByte(0x33u, CY8CMBR3xxx_BUTTON_STAT, &BufferR);
+    return (uint32)(BufferL << 16 | BufferR);
 }

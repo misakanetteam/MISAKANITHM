@@ -145,7 +145,8 @@ bool Host_LowLevelWrite(uint8 slaveAddress, uint8 *writeBuffer, uint8 numberOfBy
     Wire.endTransmission();
 
     if (Wire.getWriteError() == 0) return true;
-    else return false;
+
+    return false;
 }
 
 /*******************************************************************************
@@ -191,13 +192,14 @@ bool Host_LowLevelWrite(uint8 slaveAddress, uint8 *writeBuffer, uint8 numberOfBy
 bool Host_LowLevelRead(uint8 slaveAddress, uint8 *readBuffer, uint8 numberOfBytes)
 {
     Wire.requestFrom(slaveAddress, numberOfBytes);
-    uint8_t i = 0;
-    while (Wire.available()) {
-        readBuffer[i] = Wire.read();
-        i += 1;
+    uint8 timeout = 0;
+    while(!Wire.available()) {
+        if(timeout > 100) return false;
+        timeout++;
+        Host_LowLevelDelay(1);
     }
-
-    Wire.endTransmission();
+    uint8 i = 0;
+    if (Wire.readBytes(readBuffer, numberOfBytes) != numberOfBytes) return false;
     return true;
 }
 

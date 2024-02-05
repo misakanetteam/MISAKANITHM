@@ -2,14 +2,19 @@
 #define __DEFS_H
 
 #define NUM_LEDS 31
-#define WS2812_PIN 15
+#define WS2812_PIN 27
 #define BRIGHTNESS 128
 
-#define VL53L0X_COUNT 3
-#define VL53L0X_PIN_START 5
+#define I2C0_SDA 12
+#define I2C0_SCL 13
+#define I2C1_SDA 14
+#define I2C1_SCL 15
+
+#define VL53L0X_COUNT 6
+#define VL53L0X_PIN_START 6
 #define VL53L0X_ADDR_START 0x30
 
-#define AIR_RANGE 20
+#define AIR_RANGE 30
 
 enum air_height {
     AIR1_HEIGHT = 100,
