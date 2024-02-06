@@ -3,6 +3,7 @@
 #include <Adafruit_NeoPixel.h>
 #include <Adafruit_TinyUSB.h>
 #include <Adafruit_VL53L0X.h>
+#include <ArduinoUniqueID.h>
 #include <Wire.h>
 
 #include "defs.h"
@@ -15,7 +16,7 @@
 
 Adafruit_NeoPixel ws2812(NUM_LEDS, WS2812_PIN, NEO_GRB + NEO_KHZ800);
 Adafruit_NeoPixel status_led(1, 16, NEO_GRB + NEO_KHZ800);
-Adafruit_USBD_HID usb_hid(desc_hid_report, sizeof(desc_hid_report), HID_ITF_PROTOCOL_NONE, 2, true);
+Adafruit_USBD_HID usb_hid(desc_hid_report, sizeof(desc_hid_report), HID_ITF_PROTOCOL_NONE, 1, true);
 Adafruit_VL53L0X vl53l0x[VL53L0X_COUNT];
 
 uint16_t get_report_callback(uint8_t report_id, hid_report_type_t report_type, uint8_t* buffer, uint16_t reqlen);
@@ -23,7 +24,8 @@ void set_report_callback(uint8_t report_id, hid_report_type_t report_type, uint8
 
 void (*resetFunc)() = 0;
 
-bool isEnabled = false;
+bool is_enabled = false;
+char *uniqueID = (char *)malloc(8);
 
 // core0初始化
 void setup() {
@@ -46,17 +48,20 @@ void setup() {
   ws2812.clear();
   ws2812.show();
 
+  // 获取设备序列号
+  for (uint8_t i = 0; i < 8; i++) {
+    sprintf(uniqueID + i*2, "%.2x", UniqueID8[i]);
+  }
+
   // 初始化USB
   TinyUSBDevice.setSerialDescriptor("OK"); //设定USB设备序列号
-  TinyUSBDevice.setID(0x1946, 0x5000); //设定USB设备vid，pid
+  TinyUSBDevice.setID(USB_VID, USB_PID); //设定USB设备vid，pid
   TinyUSBDevice.setProductDescriptor("MISAKANITHM"); //设定USB设备产品名
   TinyUSBDevice.setManufacturerDescriptor("MisakaNet Team"); //设定USB设备制造商名
-  usb_hid.setPollInterval(1); //设定hid报文间隔为1ms，即最大1000hz回报率
   usb_hid.setReportCallback(get_report_callback, set_report_callback); //当电脑向手台发送数据时会调用set_report_callback进行处理
   usb_hid.begin();
 
   SerialTinyUSB.begin(115200);
-  //while(!Serial);
 
   // 初始化I2C
   Wire.setSDA(I2C0_SDA);
@@ -100,7 +105,15 @@ void setup() {
 
 // core0循环
 void loop() {
-  if (isEnabled) {
+  if (Serial.available()) {
+    switch(Serial.read()) {
+      case 0x0:                     // RST
+        resetFunc();
+        break;
+
+    }
+  }
+  if (is_enabled) {
     // 获取传感器数据
     uint32 raw_touch_value = touch_get();
     //uint32 raw_touch_value = 0;
@@ -120,16 +133,7 @@ void loop() {
 
     memcpy(&data_tx.TouchValue, touch_value, 32); //32个分区的触摸数值
 
-    usb_hid.sendReport(0, &data_tx, 35);
-  }
-
-  if (Serial.available()) {
-    switch(Serial.read()) {
-      case 0x0:                     // RST
-        resetFunc();
-        break;
-
-    }
+    usb_hid.sendReport(0, &data_tx, sizeof(data_tx));
   }
 }
 
@@ -140,9 +144,11 @@ uint16_t get_report_callback(uint8_t report_id, hid_report_type_t report_type, u
   // not used in this example
   (void) report_id;
   (void) report_type;
-  (void) buffer;
 
-  return 0;
+  buffer[0] = 0;
+  is_enabled = true;
+
+  return 1;
 }
 
 // Invoked when received SET_REPORT control request or
@@ -153,14 +159,9 @@ void set_report_callback(uint8_t report_id, hid_report_type_t report_type, uint8
   (void) report_id;
   (void) report_type;
 
+  if (bufsize != sizeof(data_rx)) return;
+
   memcpy(&data_rx, buffer, bufsize);
-  
-  if(data_rx.enable == 1) {
-    isEnabled = true;
-    status_led.clear();
-    status_led.show();
-    return;
-  }
 
   for (uint8_t i = 0; i < 31; i++) {
     rgb color = data_rx.TouchArea[i];

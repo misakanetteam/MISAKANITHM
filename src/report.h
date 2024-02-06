@@ -32,7 +32,7 @@ uint8_t const desc_hid_report[] =
     0x09, 0x01,                  /* usage */
     0x81, 0x02,                  /* Input (array) */
 
-    0x95, 63,        /* report count RX */
+    0x95, 62,        /* report count RX */
     0x09, 0x02,                  /* usage */
     0x91, 0x02,                  /* Output (array) */
     0xC0                         /* end collection */ 
@@ -50,7 +50,6 @@ struct rgb {
 };
 
 struct {
-  uint8_t enable;
   struct rgb TouchArea[31];  //触摸区域灯
 } data_rx;
 

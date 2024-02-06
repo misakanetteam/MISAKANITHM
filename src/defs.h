@@ -1,6 +1,10 @@
 #ifndef __DEFS_H
 #define __DEFS_H
 
+#define USB_VID 0x1973
+#define USB_PID 0x2001
+
+#ifdef OFFICIAL_V1
 #define NUM_LEDS 31
 #define WS2812_PIN 27
 #define BRIGHTNESS 128
@@ -24,5 +28,6 @@ enum air_height {
     AIR5_HEIGHT = 300,
     AIR6_HEIGHT = 350
 };
+#endif
 
 #endif
