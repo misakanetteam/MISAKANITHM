@@ -1,13 +1,14 @@
 #ifndef __DEFS_H
 #define __DEFS_H
 
-#define USB_VID 0x1973
-#define USB_PID 0x2001
+#undef USB_VID
+#undef USB_PID
+#define USB_VID 0x2E8A
+#define USB_PID 0x2002
 
 #ifdef OFFICIAL_V1
 #define NUM_LEDS 31
 #define WS2812_PIN 27
-#define BRIGHTNESS 128
 
 #define I2C0_SDA 12
 #define I2C0_SCL 13
@@ -20,7 +21,8 @@
 
 #define AIR_RANGE 30
 
-enum air_height {
+enum air_height
+{
     AIR1_HEIGHT = 100,
     AIR2_HEIGHT = 150,
     AIR3_HEIGHT = 200,

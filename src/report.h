@@ -3,54 +3,50 @@
 
 #include <Arduino.h>
 
+#include <Adafruit_NeoPixel.h>
 #include <Adafruit_TinyUSB.h>
 
 // RawHID might never work with multireports, because of OS problems
 // therefore we have to make it a single report with no ID. No other HID device will be supported then.
 #undef RAWHID_USAGE_PAGE
-#define RAWHID_USAGE_PAGE	0xFFC0 // recommended: 0xFF00 to 0xFFFF
+#define RAWHID_USAGE_PAGE 0xFFC0 // recommended: 0xFF00 to 0xFFFF
 
 #undef RAWHID_USAGE
-#define RAWHID_USAGE		0x0C00 // recommended: 0x0100 to 0xFFFF
+#define RAWHID_USAGE 0x0C00 // recommended: 0x0100 to 0xFFFF
 
 uint8_t const desc_hid_report[] =
-{
-  	/*    RAW HID */
-    0x06, lowByte(RAWHID_USAGE_PAGE), highByte(RAWHID_USAGE_PAGE),      /* 30 */
-    0x0A, lowByte(RAWHID_USAGE), highByte(RAWHID_USAGE),
+    {
+        /*    RAW HID */
+        0x06, lowByte(RAWHID_USAGE_PAGE), highByte(RAWHID_USAGE_PAGE), /* 30 */
+        0x0A, lowByte(RAWHID_USAGE), highByte(RAWHID_USAGE),
 
-    0xA1, 0x01,                  /* Collection 0x01 */
-    // RawHID is not multireport compatible.
-    // On Linux it might work with some modifications,
-    // however you are not happy to use it like that.
-    //0x85, HID_REPORTID_RAWHID,			 /* REPORT_ID */
-    0x75, 0x08,                  /* report size = 8 bits */
-    0x15, 0x00,                  /* logical minimum = 0 */
-    0x26, 0xFF, 0x00,            /* logical maximum = 255 */
+        0xA1, 0x01, /* Collection 0x01 */
+        // RawHID is not multireport compatible.
+        // On Linux it might work with some modifications,
+        // however you are not happy to use it like that.
+        // 0x85, HID_REPORTID_RAWHID,			 /* REPORT_ID */
+        0x75, 0x08,       /* report size = 8 bits */
+        0x15, 0x00,       /* logical minimum = 0 */
+        0x26, 0xFF, 0x00, /* logical maximum = 255 */
 
-    0x95, 34,        /* report count TX */
-    0x09, 0x01,                  /* usage */
-    0x81, 0x02,                  /* Input (array) */
+        0x95, 34,   /* report count TX */
+        0x09, 0x01, /* usage */
+        0x81, 0x00, /* Input (array) */
 
-    0x95, 62,        /* report count RX */
-    0x09, 0x02,                  /* usage */
-    0x91, 0x02,                  /* Output (array) */
-    0xC0                         /* end collection */ 
+        0x95, 61,   /* report count RX */
+        0x09, 0x02, /* usage */
+        0x91, 0x00, /* Output (array) */
+        0xC0        /* end collection */
 };
 
-struct {
-  uint8_t AIRValue;         //红外传感器信号，低6bits对应6个传感器
-  uint8_t Buttons;         //控制器3个功能按键，低3bits对应3个按键
-  uint8_t TouchValue[32];  //32个触摸数值
-} data_tx;
+void hid_report_init(Adafruit_NeoPixel *status_led_ptr, bool *is_enabled_ptr);
+uint8_t *hid_report_get();
 
-struct rgb {
-  uint8_t highByte;
-  uint8_t lowByte;
-};
+void hid_report_send();
+void hid_report_gen(uint8_t air_value, uint8_t touch_value[32]);
+void hid_report_gen(uint8_t touch_value[32]);
 
-struct {
-  struct rgb TouchArea[31];  //触摸区域灯
-} data_rx;
+uint16_t get_report_callback(uint8_t report_id, hid_report_type_t report_type, uint8_t *buffer, uint16_t reqlen);
+void set_report_callback(uint8_t report_id, hid_report_type_t report_type, uint8_t const *buffer, uint16_t bufsize);
 
 #endif
