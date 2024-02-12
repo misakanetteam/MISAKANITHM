@@ -8,7 +8,7 @@ uint8_t air_check(Adafruit_VL53L0X vl53l0x[VL53L0X_COUNT], bool vl53l0x_enable[V
     {
         if (!vl53l0x_enable)
             break;
-        vl53l0x[i].waitRangeComplete();
+        //vl53l0x[i].waitRangeComplete();
         uint16_t range = vl53l0x[i].readRangeResult();
 
         // 判断是否在对应范围内

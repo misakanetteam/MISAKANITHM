@@ -39,7 +39,10 @@ uint8_t const desc_hid_report[] =
         0xC0        /* end collection */
 };
 
-void hid_report_init(Adafruit_NeoPixel *status_led_ptr, bool *is_enabled_ptr);
+bool is_enabled();
+bool is_transfering_rgb();
+
+void hid_report_init(Adafruit_NeoPixel *status_led_ptr);
 uint8_t *hid_report_get();
 
 void hid_report_send();

@@ -22,9 +22,9 @@ bool vl53l0x_enable[VL53L0X_COUNT];
 uint16_t get_report_callback(uint8_t report_id, hid_report_type_t report_type, uint8_t *buffer, uint16_t reqlen);
 void set_report_callback(uint8_t report_id, hid_report_type_t report_type, uint8_t const *buffer, uint16_t bufsize);
 
-// 是否已启动游戏
-bool is_enabled = false;
 char *uniqueID = (char *)malloc(8);
+
+uint8_t air_check_count = 5;
 
 // core0初始化
 void setup()
@@ -47,7 +47,7 @@ void setup()
   TinyUSBDevice.setManufacturerDescriptor("MisakaNet Team"); // 设定USB设备制造商名
 
   // 初始化HID
-  hid_report_init(&status_led, &is_enabled);
+  hid_report_init(&status_led);
 
   // 初始化CDC
   Serial.begin(115200);
@@ -114,7 +114,7 @@ void loop()
 {
   // 检测Serial指令
   // 启动游戏后停止检测
-  if (!is_enabled && Serial.available())
+  if (!is_enabled() && Serial.available())
   {
     // 获取指令种类
     char command;
@@ -145,27 +145,15 @@ void loop()
     }
   }
 
-  if (is_enabled)
-  {
-    // 更新LED
-    uint8_t *data_rx = hid_report_get();
-    if (data_rx)
-    {
-      for (uint8_t i = 0; i < 31; i++)
-      {
-        uint8_t index = i * 3;
-        ws2812.setPixelColor(30 - i, data_rx[index + 1], data_rx[index + 2], data_rx[index]);
-      }
-
-      ws2812.show();
-    }
-  }
+  // 发送报文
+  if (is_enabled() && !is_transfering_rgb())
+    hid_report_send();
 }
 
 // core1循环
 void loop1()
 {
-  if (is_enabled)
+  if (is_enabled())
   {
     // 获取传感器数据
     touch_wake();
@@ -176,13 +164,29 @@ void loop1()
     {
       touch_value[i] = (raw_touch_value >> 31 - i) & 1 * 128;
     }
+    if (air_check_count++ == 5)
+    {
+      uint8_t air_value = air_check(vl53l0x, vl53l0x_enable);
+      air_check_count = 0;
 
-    uint8_t air_value = air_check(vl53l0x, vl53l0x_enable);
+      // 生成报文
+      hid_report_gen(air_value, touch_value);
+    }
+    else
+    {
+      hid_report_gen(touch_value);
+    }
+    // 更新LED
+    if (!is_transfering_rgb())
+    {
+      uint8_t *data_rx = hid_report_get();
+      for (uint8_t i = 0; i < 31; i++)
+      {
+        uint8_t *ptr = data_rx + i * 3;
+        ws2812.setPixelColor(30 - i, *(ptr + 1), *(ptr + 2), *ptr);
+      }
 
-    // 生成报文
-    hid_report_gen(air_value, touch_value);
-
-    // 发送报文
-    hid_report_send();
+      ws2812.show();
+    }
   }
 }
