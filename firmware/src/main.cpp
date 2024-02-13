@@ -29,7 +29,7 @@ void setup()
 {
   // 初始化状态灯
   status_led.begin();
-  status_led.setPixelColor(0, 0, 255, 0); // 状态灯红色 正在初始化
+  status_led.setPixelColor(0, 0, 0, 255); // 状态灯红色 正在初始化
   status_led.show();
 
   // 获取设备序列号

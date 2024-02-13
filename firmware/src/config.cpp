@@ -1,6 +1,5 @@
 #include "config.h"
 
-#include <Updater.h>
 #include <LittleFS.h>
 
 bool command_init()
@@ -48,16 +47,7 @@ bool command_read()
 
     case 0xff: // 更新固件
         LittleFS.end();
-        rp2040.resumeOtherCore();
-        uint8_t size[2];
-        Serial.readBytes(size, 2);
-        if (!Update.begin(size[0] << 8 | size[1]) || Update.writeStream(Serial) != size[0] << 8 | size[1] || !Update.end())
-            command_tx.success = 0;
-        else
-            command_tx.success = 1;
-        Serial.write((const char *)&command_tx, sizeof(command_tx));
-        Serial.end();
-        rp2040.reboot();
+        rp2040.rebootToBootloader();
         break;
     }
 
