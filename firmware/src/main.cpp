@@ -6,8 +6,8 @@
 #include <Adafruit_TinyUSB.h>
 #include <Adafruit_VL53L0X.h>
 #include <ArduinoUniqueID.h>
-#include <Updater.h>
 #include <Wire.h>
+#include <LittleFS.h>
 
 #include "air.h"
 #include "config.h"
@@ -22,8 +22,6 @@ bool vl53l0x_enable[VL53L0X_COUNT];
 uint16_t get_report_callback(uint8_t report_id, hid_report_type_t report_type, uint8_t *buffer, uint16_t reqlen);
 void set_report_callback(uint8_t report_id, hid_report_type_t report_type, uint8_t const *buffer, uint16_t bufsize);
 
-char *uniqueID = (char *)malloc(8);
-
 uint8_t air_check_count = 5;
 
 // core0初始化
@@ -37,11 +35,10 @@ void setup()
   // 获取设备序列号
   for (uint8_t i = 0; i < 8; i++)
   {
-    sprintf(uniqueID + i * 2, "%.2X", UniqueID8[i]);
+    sprintf((char *)(command_tx.uniqueID + i * 2), "%.2X", UniqueID8[i]);
   }
 
   // 初始化USB
-  TinyUSBDevice.setSerialDescriptor(uniqueID);               // 设定USB设备序列号
   TinyUSBDevice.setID(USB_VID, USB_PID);                     // 设定USB设备vid，pid
   TinyUSBDevice.setProductDescriptor("MISAKANITHM");         // 设定USB设备产品名
   TinyUSBDevice.setManufacturerDescriptor("MisakaNet Team"); // 设定USB设备制造商名
@@ -51,6 +48,9 @@ void setup()
 
   // 初始化CDC
   Serial.begin(115200);
+
+  // 初始化配置功能
+  command_init();
 
   // 初始化I2C
   Wire.setSDA(I2C0_SDA);
@@ -116,31 +116,11 @@ void loop()
   // 启动游戏后停止检测
   if (!is_enabled() && Serial.available())
   {
-    // 获取指令种类
-    char command;
-    Serial.readBytes(&command, 1);
-    switch (command)
-    {
-    case 0x0: // RST
-      rp2040.reboot();
-      break;
-    case 0xff: // UPDATE
-      rp2040.resumeOtherCore();
-      uint8_t size[2];
-      Serial.readBytes(size, 2);
-      if (!Update.begin(size[0] << 8 | size[1]) || Update.writeStream(Serial) != size[0] << 8 | size[1] || !Update.end())
-        command_tx.success = 0;
-      else
-        command_tx.success = 1;
-      Serial.write((const char *)&command_tx, sizeof(command_tx));
-      rp2040.reboot();
-      break;
-    }
-    // 获取完整指令
-    if (Serial.readBytes((uint8_t *)&command_rx, sizeof(command_rx)) != sizeof(command_rx))
+    if (!command_read() || !command_execute())
     {
       command_tx.success = 0;
-      Serial.write((const char *)&command_tx, sizeof(command_tx));
+      Serial.write((const char *) &command_tx, sizeof(command_tx));
+      LittleFS.end();
       rp2040.reboot();
     }
   }

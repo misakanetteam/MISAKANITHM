@@ -1,5 +1,7 @@
 #include "report.h"
 
+#include <LittleFS.h>
+
 namespace report
 {
   Adafruit_USBD_HID usb_hid;
@@ -78,6 +80,8 @@ uint16_t get_report_callback(uint8_t report_id, hid_report_type_t report_type, u
 {
   (void)report_id;
   (void)report_type;
+
+  LittleFS.end();
 
   report::status_led->clear();
   report::status_led->show();

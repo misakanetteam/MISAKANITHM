@@ -6,7 +6,12 @@
 #define USB_VID 0x2E8A
 #define USB_PID 0x2002
 
+#define FIRMWARE_VERSION 1
+
 #ifdef OFFICIAL_V1
+
+#define DEVICE_VERSION 1
+
 #define NUM_LEDS 31
 #define WS2812_PIN 27
 
@@ -30,6 +35,6 @@ enum air_height
     AIR5_HEIGHT = 300,
     AIR6_HEIGHT = 350
 };
-#endif
+#endif // OFFICIAL_V1
 
-#endif
+#endif // __DEFS_H

@@ -52,4 +52,4 @@ void hid_report_gen(uint8_t touch_value[32]);
 uint16_t get_report_callback(uint8_t report_id, hid_report_type_t report_type, uint8_t *buffer, uint16_t reqlen);
 void set_report_callback(uint8_t report_id, hid_report_type_t report_type, uint8_t const *buffer, uint16_t bufsize);
 
-#endif
+#endif // __REPORT_H

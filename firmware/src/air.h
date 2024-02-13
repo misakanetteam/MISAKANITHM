@@ -9,4 +9,4 @@
 
 // AIR扫描
 uint8_t air_check(Adafruit_VL53L0X vl53l0x[VL53L0X_COUNT], bool vl53l0x_enable[VL53L0X_COUNT]);
-#endif
+#endif // __AIR_H
