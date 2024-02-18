@@ -2,12 +2,10 @@
 #include <Adafruit_TinyUSB.h>
 #include <Adafruit_VL53L0X.h>
 #include <Arduino.h>
-#include <ArduinoUniqueID.h>
 #include <LittleFS.h>
 #include <Wire.h>
 
 #include "air.h"
-#include "config.h"
 #include "defs.h"
 #include "report.h"
 #include "touch.h"
@@ -26,11 +24,6 @@ void setup() {
   status_led.setPixelColor(0, 0, 255, 0);  // 状态灯红色 正在初始化
   status_led.show();
 
-  // 获取设备序列号
-  for (uint8_t i = 0; i < 8; i++) {
-    sprintf((char *)(command_tx.uniqueID + i * 2), "%.2X", UniqueID8[i]);
-  }
-
   // 初始化USB
   TinyUSBDevice.setID(USB_VID, USB_PID);  // 设定USB设备vid，pid
   TinyUSBDevice.setProductDescriptor("MISAKANITHM");  // 设定USB设备产品名
@@ -42,9 +35,6 @@ void setup() {
 
   // 初始化CDC
   Serial.begin(115200);
-
-  // 初始化配置功能
-  command_init();
 
   // 初始化I2C
   Wire.setSDA(I2C0_SDA);
@@ -79,7 +69,7 @@ void setup() {
   }
 
   // 初始化CY8CMBR3116
-  // touch_setup();
+  touch_setup();
 
   // 初始化完成
   status_led.setPixelColor(0, 255, 0, 0);  // 状态灯绿色 等待游戏启动
@@ -105,14 +95,9 @@ void setup1() {
 void loop() {
   // 检测Serial指令
   // 启动游戏后停止检测
-  if (!is_enabled() && Serial.available()) {
-    if (!command_read() || !command_execute()) {
-      command_tx.success = 0;
-      Serial.write((const char *)&command_tx, sizeof(command_tx));
-      LittleFS.end();
-      rp2040.reboot();
-    }
-  }
+  if (!is_enabled() && Serial.available() &&
+      Serial.readString().equals("bootloader"))
+    rp2040.rebootToBootloader();
 
   // 发送报文
   if (is_enabled() && !is_transfering_rgb()) hid_report_send();
@@ -123,8 +108,7 @@ void loop1() {
   if (is_enabled()) {
     // 获取传感器数据
     touch_wake();
-    // uint32 raw_touch_value = touch_get();
-    uint32 raw_touch_value = 0;
+    uint32 raw_touch_value = touch_get();
     uint8_t touch_value[32];
     for (uint8_t i = 0; i < 32; i++) {
       touch_value[i] = (raw_touch_value >> 31 - i) & 1 * 128;
