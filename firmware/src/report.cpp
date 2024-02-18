@@ -2,35 +2,27 @@
 
 #include <LittleFS.h>
 
-namespace report
-{
-  Adafruit_USBD_HID usb_hid;
+namespace report {
+Adafruit_USBD_HID usb_hid;
 
-  Adafruit_NeoPixel *status_led = NULL;
+Adafruit_NeoPixel *status_led = NULL;
 
-  // 是否已启动游戏
-  bool is_enabled;
+// 是否已启动游戏
+bool is_enabled;
 
-  bool is_transfering_rgb;
+bool is_transfering_rgb;
 
-  uint8_t *data_tx;
+uint8_t *data_tx;
 
-  uint8_t *data_rx;
-}
+uint8_t *data_rx;
+}  // namespace report
 
-bool is_enabled()
-{
-  return report::is_enabled;
-}
+bool is_enabled() { return report::is_enabled; }
 
-bool is_transfering_rgb()
-{
-  return report::is_transfering_rgb;
-}
+bool is_transfering_rgb() { return report::is_transfering_rgb; }
 
 // HID初始化函数
-void hid_report_init(Adafruit_NeoPixel *status_led_ptr)
-{
+void hid_report_init(Adafruit_NeoPixel *status_led_ptr) {
   // 初始化HID对象
   report::usb_hid.enableOutEndpoint(true);
   report::usb_hid.setBootProtocol(HID_ITF_PROTOCOL_NONE);
@@ -51,33 +43,25 @@ void hid_report_init(Adafruit_NeoPixel *status_led_ptr)
 }
 
 // 获取HID报文
-uint8_t *hid_report_get()
-{
-  return report::data_rx;
-}
+uint8_t *hid_report_get() { return report::data_rx; }
 
 // 发送HID报文
-void hid_report_send()
-{
-  report::usb_hid.sendReport(0, report::data_tx, 34);
-}
+void hid_report_send() { report::usb_hid.sendReport(0, report::data_tx, 34); }
 
 // 生成HID报文
-void hid_report_gen(uint8_t air_value, uint8_t touch_value[32])
-{
+void hid_report_gen(uint8_t air_value, uint8_t touch_value[32]) {
   report::data_tx[0] = air_value;
   memcpy(report::data_tx + 2, touch_value, 32);
 }
-void hid_report_gen(uint8_t touch_value[32])
-{
+void hid_report_gen(uint8_t touch_value[32]) {
   memcpy(report::data_tx + 2, touch_value, 32);
 }
 
 // Invoked when received GET_REPORT control request
 // Application must fill buffer report's content and return its length.
 // Return zero will cause the stack to STALL request
-uint16_t get_report_callback(uint8_t report_id, hid_report_type_t report_type, uint8_t *buffer, uint16_t reqlen)
-{
+uint16_t get_report_callback(uint8_t report_id, hid_report_type_t report_type,
+                             uint8_t *buffer, uint16_t reqlen) {
   (void)report_id;
   (void)report_type;
 
@@ -86,8 +70,7 @@ uint16_t get_report_callback(uint8_t report_id, hid_report_type_t report_type, u
   report::status_led->clear();
   report::status_led->show();
 
-  if (reqlen != 34)
-    return 0;
+  if (reqlen != 34) return 0;
 
   memset(buffer, 1, 34);
   report::is_enabled = true;
@@ -99,22 +82,18 @@ uint16_t get_report_callback(uint8_t report_id, hid_report_type_t report_type, u
 // Invoked when received SET_REPORT control request or
 // received data on OUT endpoint ( Report ID = 0, Type = 0 )
 // 当接受到数据时会触发中断, 自动运行这个函数
-void set_report_callback(uint8_t report_id, hid_report_type_t report_type, uint8_t const *buffer, uint16_t bufsize)
-{
+void set_report_callback(uint8_t report_id, hid_report_type_t report_type,
+                         uint8_t const *buffer, uint16_t bufsize) {
   // This example doesn't use multiple report and report ID
   (void)report_id;
   (void)report_type;
 
-  if (bufsize != 61)
-    return;
+  if (bufsize != 61) return;
 
-  if (buffer[0] == 0)
-  {
+  if (buffer[0] == 0) {
     memcpy(report::data_rx, buffer + 1, 60);
     report::is_transfering_rgb = true;
-  }
-  else
-  {
+  } else {
     memcpy(report::data_rx + 60, buffer + 1, 33);
     report::is_transfering_rgb = false;
   }
