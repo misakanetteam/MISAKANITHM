@@ -26,14 +26,15 @@
 
 #define AIR_RANGE 30
 
-enum air_height {
-  AIR1_HEIGHT = 100,
-  AIR2_HEIGHT = 150,
-  AIR3_HEIGHT = 200,
-  AIR4_HEIGHT = 250,
-  AIR5_HEIGHT = 300,
-  AIR6_HEIGHT = 350
+enum air_height
+{
+    AIR1_HEIGHT = 100,
+    AIR2_HEIGHT = 150,
+    AIR3_HEIGHT = 200,
+    AIR4_HEIGHT = 250,
+    AIR5_HEIGHT = 300,
+    AIR6_HEIGHT = 350
 };
-#endif  // OFFICIAL_V1
+#endif // OFFICIAL_V1
 
-#endif  // __DEFS_H
+#endif // __DEFS_H
