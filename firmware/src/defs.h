@@ -26,6 +26,12 @@
 
 #define AIR_RANGE 30
 
+#define TOUCH_MAP                                                            \
+  {                                                                          \
+    17, 19, 21, 23, 16, 18, 20, 22, 24, 26, 28, 30, 25, 27, 29, 31, 6, 4, 2, \
+        0, 8, 10, 15, 13, 11, 9, 7, 5, 3, 1, 14, 12                          \
+  }
+
 enum air_height {
   AIR1_HEIGHT = 100,
   AIR2_HEIGHT = 150,
