@@ -32,20 +32,19 @@ uint8_t const desc_hid_report[] = {
     0x09, 0x01, /* usage */
     0x81, 0x00, /* Input (array) */
 
-    0x95, 61,   /* report count RX */
+    0x95, 62,   /* report count RX */
     0x09, 0x02, /* usage */
     0x91, 0x00, /* Output (array) */
     0xC0        /* end collection */
 };
 
 bool is_enabled();
-bool is_transfering_rgb();
 
 void hid_report_init(Adafruit_NeoPixel *status_led_ptr);
 uint8_t *hid_report_get();
 
 void hid_report_send();
-void hid_report_gen(uint8_t air_value, uint8_t touch_value[32]);
+void hid_report_air(uint8_t air_value);
 void hid_report_gen(uint8_t touch_value[32]);
 
 uint16_t get_report_callback(uint8_t report_id, hid_report_type_t report_type,

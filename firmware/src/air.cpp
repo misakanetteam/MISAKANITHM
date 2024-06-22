@@ -5,9 +5,10 @@ uint8_t air_check(Adafruit_VL53L0X vl53l0x[VL53L0X_COUNT],
   uint8_t air_value;
   // 扫描VL53L0X
   for (int i = 0; i < VL53L0X_COUNT; i++) {
-    if (!vl53l0x_enable) break;
+    if (!vl53l0x_enable) continue;
+    if (!vl53l0x[i].isRangeComplete()) continue;
     // vl53l0x[i].waitRangeComplete();
-    uint16_t range = vl53l0x[i].readRangeResult();
+    uint16_t range = vl53l0x[i].readRange();
 
     // 判断是否在对应范围内
     if (AIR1_HEIGHT - AIR_RANGE <= range && range <= AIR1_HEIGHT + AIR_RANGE) {

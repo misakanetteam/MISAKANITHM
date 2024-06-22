@@ -10,16 +10,12 @@ Adafruit_NeoPixel *status_led = NULL;
 // 是否已启动游戏
 bool is_enabled;
 
-bool is_transfering_rgb;
-
 uint8_t *data_tx;
 
 uint8_t *data_rx;
 }  // namespace report
 
 bool is_enabled() { return report::is_enabled; }
-
-bool is_transfering_rgb() { return report::is_transfering_rgb; }
 
 // HID初始化函数
 void hid_report_init(Adafruit_NeoPixel *status_led_ptr) {
@@ -35,9 +31,9 @@ void hid_report_init(Adafruit_NeoPixel *status_led_ptr) {
 
   // 初始化内存
   report::data_tx = (uint8_t *)malloc(34);
-  report::data_rx = (uint8_t *)malloc(93);
+  report::data_rx = (uint8_t *)malloc(62);
   memset(report::data_tx, 0, 34);
-  memset(report::data_rx, 0, 93);
+  memset(report::data_rx, 0, 62);
   report::status_led = status_led_ptr;
   report::is_enabled = false;
 }
@@ -49,10 +45,7 @@ uint8_t *hid_report_get() { return report::data_rx; }
 void hid_report_send() { report::usb_hid.sendReport(0, report::data_tx, 34); }
 
 // 生成HID报文
-void hid_report_gen(uint8_t air_value, uint8_t touch_value[32]) {
-  report::data_tx[0] = air_value;
-  memcpy(report::data_tx + 2, touch_value, 32);
-}
+void hid_report_air(uint8_t air_value) { report::data_tx[0] = air_value; }
 void hid_report_gen(uint8_t touch_value[32]) {
   memcpy(report::data_tx + 2, touch_value, 32);
 }
@@ -65,16 +58,18 @@ uint16_t get_report_callback(uint8_t report_id, hid_report_type_t report_type,
   (void)report_id;
   (void)report_type;
 
+  if (reqlen != 34) return 0;
+
+  memset(buffer, 1, 34);
+
   LittleFS.end();
 
   report::status_led->clear();
   report::status_led->show();
 
-  if (reqlen != 34) return 0;
-
-  memset(buffer, 1, 34);
-  report::is_enabled = true;
   Serial.end();
+
+  report::is_enabled = true;
 
   return reqlen;
 }
@@ -88,13 +83,7 @@ void set_report_callback(uint8_t report_id, hid_report_type_t report_type,
   (void)report_id;
   (void)report_type;
 
-  if (bufsize != 61) return;
+  if (bufsize != 62) return;
 
-  if (buffer[0] == 0) {
-    memcpy(report::data_rx, buffer + 1, 60);
-    report::is_transfering_rgb = true;
-  } else {
-    memcpy(report::data_rx + 60, buffer + 1, 33);
-    report::is_transfering_rgb = false;
-  }
+  memcpy(report::data_rx, buffer, 62);
 }

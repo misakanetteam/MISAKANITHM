@@ -20,7 +20,7 @@ bool CY8CMBR3116::begin(uint8_t i2caddr, TwoWire* theWire) {
   if (!i2c_dev->begin()) {
     return false;
   }
-  return 1;
+  return true;
 }
 
 void CY8CMBR3116::writeRegister(uint8_t reg, uint8_t value) {
