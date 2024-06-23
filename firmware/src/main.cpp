@@ -311,9 +311,12 @@ void loop1() {
     // 更新LED
     uint8_t *data_rx = hid_report_get();
     for (uint8_t i = 0; i < 31; i++) {
-      RGB565_struct *rgb = (RGB565_struct *)(data_rx + (i << 1));
-      ws2812.setPixelColor(30 - i, (uint8_t)rgb->Work.RGB_G,
-                           (uint8_t)rgb->Work.RGB_R, (uint8_t)rgb->Work.RGB_B);
+       RGB565_struct *rgb = (RGB565_struct *)(data_rx + (i << 1));
+       RGB888_struct unpacked = {0};
+       unpacked.Work.R = rgb->Work.R;
+       unpacked.Work.G = rgb->Work.G;
+       unpacked.Work.B = rgb->Work.B;
+      ws2812.setPixelColor(30 - i, unpacked.RGB888);
     }
 
     ws2812.show();
